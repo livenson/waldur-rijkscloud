@@ -8,11 +8,12 @@ class RijkscloudClient(object):
     Rijkscloud Python client.
     """
 
-    def __init__(self, apikey):
+    def __init__(self, apikey, userid):
         self.base_url = 'https://cst.rijkscloud.nl/api'
         self.headers = {
             'Content-Type': 'application/json',
-            'Authorization': apikey,
+            'apikey': apikey,
+            'userid': userid,
         }
 
     def _get(self, endpoint, key):
