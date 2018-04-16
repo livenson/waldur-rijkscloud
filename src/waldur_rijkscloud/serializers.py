@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
 from waldur_core.core import serializers as core_serializers
@@ -66,8 +67,7 @@ class VolumeSerializer(structure_serializers.BaseResourceSerializer):
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
             'runtime_state')
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'size',
-        )
+            'size')
         extra_kwargs = dict(
             size={'required': False, 'allow_null': True},
             **structure_serializers.BaseResourceSerializer.Meta.extra_kwargs

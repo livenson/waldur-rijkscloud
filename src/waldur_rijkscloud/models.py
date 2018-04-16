@@ -64,6 +64,11 @@ class Volume(structure_models.Volume):
     def get_url_name(cls):
         return 'rijkscloud-volume'
 
+    @classmethod
+    def get_backend_fields(cls):
+        return super(Volume, cls).get_backend_fields() + (
+            'name', 'size', 'metadata', 'runtime_state')
+
 
 class Instance(structure_models.VirtualMachine):
     service_project_link = models.ForeignKey(
