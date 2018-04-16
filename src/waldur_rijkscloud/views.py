@@ -33,6 +33,7 @@ class VolumeViewSet(six.with_metaclass(structure_views.ResourceViewMetaclass,
 
     create_executor = executors.VolumeCreateExecutor
     pull_executor = executors.VolumePullExecutor
+    delete_executor = executors.VolumeDeleteExecutor
 
 
 class InstanceViewSet(six.with_metaclass(structure_views.ResourceViewMetaclass,
@@ -42,3 +43,4 @@ class InstanceViewSet(six.with_metaclass(structure_views.ResourceViewMetaclass,
     filter_class = filters.InstanceFilter
     pull_executor = executors.InstancePullExecutor
     create_executor = executors.InstanceCreateExecutor
+    delete_executor = executors.InstanceDeleteExecutor

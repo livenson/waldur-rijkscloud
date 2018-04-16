@@ -122,6 +122,35 @@ class RijkscloudBackend(ServiceBackend):
 
         return volume
 
+    @log_backend_action()
+    def pull_volume_runtime_state(self, volume):
+        try:
+            backend_volume = self.client.get_volume(volume.backend_id)
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+        else:
+            if backend_volume['status'] != volume.runtime_state:
+                volume.runtime_state = backend_volume['status']
+                volume.save(update_fields=['runtime_state'])
+
+    @log_backend_action()
+    def delete_volume(self, volume):
+        try:
+            self.client.delete_volume(volume.backend_id)
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+
+    @log_backend_action('check is volume deleted')
+    def is_volume_deleted(self, instance):
+        try:
+            self.client.get_volume(instance.backend_id)
+            return False
+        except requests.RequestException as e:
+            if e.response.status_code == 404:
+                return True
+            else:
+                six.reraise(RijkscloudBackendError, e)
+
     def pull_instances(self):
         backend_instances = self.get_instances()
         instances = models.Instance.objects.filter(
@@ -140,7 +169,7 @@ class RijkscloudBackend(ServiceBackend):
                 handle_resource_update_success(instance)
 
     def update_instance_fields(self, instance, backend_instance):
-        # Preserve flavor fields in Waldur database if flavor is deleted in OpenStack
+        # Preserve flavor fields in Waldur database if flavor is deleted in Rijkscloud
         fields = set(models.Instance.get_backend_fields())
         flavor_fields = {'flavor_name', 'ram', 'cores'}
         if not backend_instance.flavor_name:
@@ -205,7 +234,7 @@ class RijkscloudBackend(ServiceBackend):
     @log_backend_action()
     def create_volume(self, volume):
         kwargs = {
-            'size': max(1, int(volume.size/1024)),
+            'size': max(1, int(volume.size / 1024)),
             'name': volume.name,
             'description': volume.description,
         }
@@ -222,4 +251,35 @@ class RijkscloudBackend(ServiceBackend):
 
     @log_backend_action()
     def create_instance(self, instance):
-        pass
+        kwargs = {
+            'name': instance.name,
+            'flavor': instance.flavor_name,
+            'userdata': instance.user_data,
+        }
+
+        try:
+            self.client.create_instance(**kwargs)
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+
+        instance.backend_id = instance.name
+        instance.save()
+        return instance
+
+    @log_backend_action()
+    def delete_instance(self, instance):
+        try:
+            self.client.delete_instance(instance.backend_id)
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+
+    @log_backend_action('check is instance deleted')
+    def is_instance_deleted(self, instance):
+        try:
+            self.client.get_instance(instance.backend_id)
+            return False
+        except requests.RequestException as e:
+            if e.response.status_code == 404:
+                return True
+            else:
+                six.reraise(RijkscloudBackendError, e)

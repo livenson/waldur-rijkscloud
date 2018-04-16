@@ -31,7 +31,7 @@ class ServiceSerializer(core_serializers.ExtraFieldOptionsMixin,
 
 class ServiceProjectLinkSerializer(structure_serializers.BaseServiceProjectLinkSerializer):
     class Meta(structure_serializers.BaseServiceProjectLinkSerializer.Meta):
-        model = models.RijkscloudService
+        model = models.RijkscloudServiceProjectLink
         extra_kwargs = {
             'service': {'lookup_field': 'uuid', 'view_name': 'rijkscloud-detail'},
         }
@@ -54,7 +54,7 @@ class VolumeSerializer(structure_serializers.BaseResourceSerializer):
         read_only=True,
         lookup_field='uuid')
     service_project_link = serializers.HyperlinkedRelatedField(
-        view_name='openstacktenant-spl-detail',
+        view_name='rijkscloud-spl-detail',
         queryset=models.RijkscloudServiceProjectLink.objects.all(),
     )
 
@@ -65,7 +65,7 @@ class VolumeSerializer(structure_serializers.BaseResourceSerializer):
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
             'runtime_state',)
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'size')
+            'size',)
         extra_kwargs = dict(
             size={'required': False, 'allow_null': True},
             **structure_serializers.BaseResourceSerializer.Meta.extra_kwargs
@@ -92,11 +92,11 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
     class Meta(structure_serializers.VirtualMachineSerializer.Meta):
         model = models.Instance
         fields = structure_serializers.VirtualMachineSerializer.Meta.fields + (
-            'flavor')
+            'flavor',)
         protected_fields = structure_serializers.VirtualMachineSerializer.Meta.protected_fields + (
-            'flavor')
+            'flavor',)
         read_only_fields = structure_serializers.VirtualMachineSerializer.Meta.read_only_fields + (
-            'flavor_name')
+            'flavor_name',)
 
     def validate(self, attrs):
         # skip validation on object update
