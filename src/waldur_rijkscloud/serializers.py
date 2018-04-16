@@ -63,7 +63,7 @@ class VolumeSerializer(structure_serializers.BaseResourceSerializer):
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'size', 'runtime_state')
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
-            'runtime_state')
+            'runtime_state',)
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
             'size')
         extra_kwargs = dict(

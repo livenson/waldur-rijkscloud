@@ -168,7 +168,7 @@ class RijkscloudBackend(ServiceBackend):
             name=backend_instance['name'],
             state=models.Instance.States.OK,
             runtime_state=backend_instance['status'],
-            backend_id=backend_instance.id,
+            backend_id=backend_instance['name'],
         )
         if backend_flavor:
             instance.flavor_name = backend_flavor['name']
@@ -196,18 +196,29 @@ class RijkscloudBackend(ServiceBackend):
             six.reraise(RijkscloudBackendError, e)
 
         instance = self._backend_instance_to_instance(backend_instance, flavor)
-        with transaction.atomic():
-            if service_project_link:
-                instance.service_project_link = service_project_link
-            if hasattr(backend_instance, 'fault'):
-                instance.error_message = backend_instance.fault['message']
-            if save:
-                instance.save()
+        if service_project_link:
+            instance.service_project_link = service_project_link
+        if save:
+            instance.save()
         return instance
 
     @log_backend_action()
     def create_volume(self, volume):
-        pass
+        kwargs = {
+            'size': max(1, int(volume.size/1024)),
+            'name': volume.name,
+            'description': volume.description,
+        }
+        try:
+            self.client.create_volume(**kwargs)
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+
+        backend_volume = self.client.get_volume(volume.name)
+        volume.backend_id = backend_volume['name']
+        volume.runtime_state = backend_volume['status']
+        volume.save()
+        return volume
 
     @log_backend_action()
     def create_instance(self, instance):
