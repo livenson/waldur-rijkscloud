@@ -5,13 +5,11 @@ from rest_framework import serializers
 
 from waldur_core.core import serializers as core_serializers
 from waldur_core.structure import serializers as structure_serializers
-
 from . import models
 
 
 class ServiceSerializer(core_serializers.ExtraFieldOptionsMixin,
                         structure_serializers.BaseServiceSerializer):
-
     SERVICE_ACCOUNT_FIELDS = {
         'username': '',
         'token': '',
@@ -63,7 +61,7 @@ class VolumeSerializer(structure_serializers.BaseResourceSerializer):
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = models.Volume
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'size',  'runtime_state')
+            'size', 'runtime_state')
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
             'runtime_state')
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (

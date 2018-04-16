@@ -8,7 +8,7 @@ Url: http://waldur.com
 Source0: %{name}-%{version}.tar.gz
 
 Requires: python-requests
-Requires: waldur-core >= 0.151.0
+Requires: waldur-core >= 0.157.4
 
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot

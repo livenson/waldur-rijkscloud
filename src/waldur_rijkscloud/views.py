@@ -4,7 +4,7 @@ import six
 
 from waldur_core.structure import views as structure_views
 
-from . import models, serializers, filters, executors
+from . import filters, executors, models, serializers
 
 
 class ServiceViewSet(structure_views.BaseServiceViewSet):

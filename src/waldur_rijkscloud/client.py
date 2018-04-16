@@ -41,6 +41,10 @@ class RijkscloudClient(object):
     def list_flavors(self):
         return self._get('flavors', 'flavors')
 
+    def get_flavor(self, flavor_name):
+        flavors_map = {flavor['name']: flavor for flavor in self.list_flavors()}
+        return flavors_map.get(flavor_name)
+
     def get_instance(self, instance_name):
         url = 'instances/%s' % instance_name
         return self._get(url, 'instance')

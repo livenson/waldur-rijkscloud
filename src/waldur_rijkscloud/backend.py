@@ -97,9 +97,6 @@ class RijkscloudBackend(ServiceBackend):
             state=models.Volume.States.OK,
         )
 
-    def pull_instances(self):
-        pass
-
     @log_backend_action()
     def pull_volume(self, volume, update_fields=None):
         import_time = timezone.now()
@@ -112,6 +109,74 @@ class RijkscloudBackend(ServiceBackend):
 
             update_pulled_fields(volume, imported_volume, update_fields)
 
+    def import_volume(self, backend_volume_id, save=True, service_project_link=None):
+        try:
+            backend_volume = self.client.get_volume(backend_volume_id)
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+        volume = self._backend_volume_to_volume(backend_volume)
+        if service_project_link is not None:
+            volume.service_project_link = service_project_link
+        if save:
+            volume.save()
+
+        return volume
+
+    def pull_instances(self):
+        backend_instances = self.get_instances()
+        instances = models.Instance.objects.filter(
+            service_project_link__service__settings=self.settings,
+            state__in=[models.Instance.States.OK, models.Instance.States.ERRED],
+        )
+        backend_instances_map = {backend_instance.backend_id: backend_instance
+                                 for backend_instance in backend_instances}
+        for instance in instances:
+            try:
+                backend_instance = backend_instances_map[instance.backend_id]
+            except KeyError:
+                handle_resource_not_found(instance)
+            else:
+                self.update_instance_fields(instance, backend_instance)
+                handle_resource_update_success(instance)
+
+    def update_instance_fields(self, instance, backend_instance):
+        # Preserve flavor fields in Waldur database if flavor is deleted in OpenStack
+        fields = set(models.Instance.get_backend_fields())
+        flavor_fields = {'flavor_name', 'ram', 'cores'}
+        if not backend_instance.flavor_name:
+            fields = fields - flavor_fields
+        fields = list(fields)
+
+        update_pulled_fields(instance, backend_instance, fields)
+
+    def get_instances(self):
+        try:
+            backend_instances = self.client.list_instances()
+            backend_flavors = self.client.list_flavors()
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+
+        backend_flavors_map = {flavor['name']: flavor for flavor in backend_flavors}
+        instances = []
+        for backend_instance in backend_instances:
+            instance_flavor = backend_flavors_map.get(backend_instance['flavor'])
+            instances.append(self._backend_instance_to_instance(backend_instance, instance_flavor))
+        return instances
+
+    def _backend_instance_to_instance(self, backend_instance, backend_flavor=None):
+        instance = models.Instance(
+            name=backend_instance['name'],
+            state=models.Instance.States.OK,
+            runtime_state=backend_instance['status'],
+            backend_id=backend_instance.id,
+        )
+        if backend_flavor:
+            instance.flavor_name = backend_flavor['name']
+            instance.cores = backend_flavor['vcpus']
+            instance.ram = backend_flavor['ram']
+
+        return instance
+
     @log_backend_action()
     def pull_instance(self, instance, update_fields=None):
         import_time = timezone.now()
@@ -122,6 +187,23 @@ class RijkscloudBackend(ServiceBackend):
             if update_fields is None:
                 update_fields = models.Instance.get_backend_fields()
             update_pulled_fields(instance, imported_instance, update_fields)
+
+    def import_instance(self, backend_instance_id, save=True, service_project_link=None):
+        try:
+            backend_instance = self.client.get_instance(backend_instance_id)
+            flavor = self.client.get_flavor(backend_instance['flavor'])
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+
+        instance = self._backend_instance_to_instance(backend_instance, flavor)
+        with transaction.atomic():
+            if service_project_link:
+                instance.service_project_link = service_project_link
+            if hasattr(backend_instance, 'fault'):
+                instance.error_message = backend_instance.fault['message']
+            if save:
+                instance.save()
+        return instance
 
     @log_backend_action()
     def create_volume(self, volume):

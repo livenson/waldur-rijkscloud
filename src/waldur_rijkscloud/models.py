@@ -81,3 +81,9 @@ class Instance(structure_models.VirtualMachine):
     @classmethod
     def get_url_name(cls):
         return 'rijkscloud-instance'
+
+    @classmethod
+    def get_backend_fields(cls):
+        return super(Instance, cls).get_backend_fields() + (
+            'flavor_name', 'ram', 'cores', 'runtime_state'
+        )
