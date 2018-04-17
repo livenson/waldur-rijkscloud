@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'waldur-core>=0.157.4',
+    'waldur-core>=0.157.5',
     'requests',
 ]
 

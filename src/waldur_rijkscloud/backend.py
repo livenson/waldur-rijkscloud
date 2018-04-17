@@ -42,6 +42,11 @@ class RijkscloudBackend(ServiceBackend):
     def _get_current_properties(self, model):
         return {p.backend_id: p for p in model.objects.filter(settings=self.settings)}
 
+    def _get_backend_resource(self, model, resources):
+        registered_backend_ids = model.objects.filter(
+            service_project_link__service__settings=self.settings).values_list('backend_id', flat=True)
+        return [instance for instance in resources if instance.backend_id not in registered_backend_ids]
+
     def pull_flavors(self):
         try:
             flavors = self.client.list_flavors()
@@ -121,6 +126,9 @@ class RijkscloudBackend(ServiceBackend):
             volume.save()
 
         return volume
+
+    def get_volumes_for_import(self):
+        return self._get_backend_resource(models.Volume, self.get_volumes())
 
     @log_backend_action()
     def pull_volume_runtime_state(self, volume):
@@ -230,6 +238,9 @@ class RijkscloudBackend(ServiceBackend):
         if save:
             instance.save()
         return instance
+
+    def get_instances_for_import(self):
+        return self._get_backend_resource(models.Instance, self.get_instances())
 
     @log_backend_action()
     def create_volume(self, volume):
