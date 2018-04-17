@@ -18,10 +18,13 @@ class RijkscloudBackendError(ServiceBackendError):
 class RijkscloudBackend(ServiceBackend):
 
     def __init__(self, settings):
+        """
+        :type settings: :class:`waldur_core.structure.models.ServiceSettings`
+        """
         self.settings = settings
         self.client = RijkscloudClient(
-            userid=settings.options['username'],
-            apikey=settings.options['token'],
+            userid=settings.username,
+            apikey=settings.token,
         )
 
     def ping(self, raise_exception=False):
