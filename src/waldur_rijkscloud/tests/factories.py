@@ -8,6 +8,8 @@ from .. import models
 
 class ServiceSettingsFactory(structure_factories.ServiceSettingsFactory):
     type = 'Rijkscloud'
+    username = 'admin'
+    token = 'secret'
 
 
 class ServiceFactory(factory.DjangoModelFactory):

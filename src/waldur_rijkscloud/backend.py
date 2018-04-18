@@ -207,7 +207,6 @@ class RijkscloudBackend(ServiceBackend):
         instance = models.Instance(
             name=backend_instance['name'],
             state=models.Instance.States.OK,
-            runtime_state=backend_instance['status'],
             backend_id=backend_instance['name'],
         )
         if backend_flavor:
