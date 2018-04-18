@@ -1,3 +1,5 @@
+import uuid
+
 from django.urls import reverse
 import factory
 
@@ -71,3 +73,26 @@ class FlavorFactory(factory.DjangoModelFactory):
     @classmethod
     def get_list_url(cls):
         return 'http://testserver' + reverse('rijkscloud-flavor-list')
+
+
+class VolumeFactory(factory.DjangoModelFactory):
+    class Meta(object):
+        model = models.Volume
+
+    name = factory.Sequence(lambda n: 'volume%s' % n)
+    service_project_link = factory.SubFactory(ServiceProjectLinkFactory)
+    size = 10 * 1024
+    backend_id = factory.LazyAttribute(lambda _: str(uuid.uuid4()))
+
+    @classmethod
+    def get_url(cls, instance=None, action=None):
+        if instance is None:
+            instance = VolumeFactory()
+        url = 'http://testserver' + reverse('rijkscloud-volume-detail', kwargs={'uuid': instance.uuid})
+        return url if action is None else url + action + '/'
+
+    @classmethod
+    def get_list_url(cls, action=None):
+        url = 'http://testserver' + reverse('rijkscloud-volume-list')
+        return url if action is None else url + action + '/'
+

@@ -22,7 +22,7 @@ class RijkscloudClient(object):
         response.raise_for_status()
         data = response.json()
         if key:
-            return data[key]
+            return data.get(key)
         else:
             return data
 
@@ -30,13 +30,15 @@ class RijkscloudClient(object):
         url = '%s/%s' % (self.base_url, endpoint)
         response = requests.post(url, headers=self.headers, data=json.dumps(body))
         response.raise_for_status()
-        return response.json()
+        if response.content:
+            return response.json()
 
     def _delete(self, endpoint):
         url = '%s/%s' % (self.base_url, endpoint)
-        response = requests.post(url, headers=self.headers)
+        response = requests.delete(url, headers=self.headers)
         response.raise_for_status()
-        return response.json()
+        if response.content:
+            return response.json()
 
     def list_flavors(self):
         return self._get('flavors', 'flavors')
@@ -94,7 +96,7 @@ class RijkscloudClient(object):
         return [self.get_volume(volume['name']) for volume in volumes]
 
     def create_volume(self, body):
-        return self._post('volume', body)
+        return self._post('volumes', body)
 
     def delete_volume(self, volume_name):
-        return self._delete('volume/%s' % volume_name)
+        return self._delete('volumes/%s' % volume_name)

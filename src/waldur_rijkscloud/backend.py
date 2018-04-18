@@ -99,8 +99,9 @@ class RijkscloudBackend(ServiceBackend):
     def _backend_volume_to_volume(self, backend_volume):
         return models.Volume(
             name=backend_volume['name'],
+            backend_id=backend_volume['name'],
             size=backend_volume['size'] * 1024,
-            metdata=backend_volume['metdata'],
+            metadata=backend_volume['metadata'],
             runtime_state=backend_volume['status'],
             state=models.Volume.States.OK,
         )
@@ -252,12 +253,12 @@ class RijkscloudBackend(ServiceBackend):
             'description': volume.description,
         }
         try:
-            self.client.create_volume(**kwargs)
+            self.client.create_volume(kwargs)
         except requests.RequestException as e:
             six.reraise(RijkscloudBackendError, e)
 
         backend_volume = self.client.get_volume(volume.name)
-        volume.backend_id = backend_volume['name']
+        volume.backend_id = volume.name
         volume.runtime_state = backend_volume['status']
         volume.save()
         return volume
@@ -271,7 +272,7 @@ class RijkscloudBackend(ServiceBackend):
         }
 
         try:
-            self.client.create_instance(**kwargs)
+            self.client.create_instance(kwargs)
         except requests.RequestException as e:
             six.reraise(RijkscloudBackendError, e)
 
