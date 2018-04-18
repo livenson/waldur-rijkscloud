@@ -95,4 +95,3 @@ class VolumeFactory(factory.DjangoModelFactory):
     def get_list_url(cls, action=None):
         url = 'http://testserver' + reverse('rijkscloud-volume-list')
         return url if action is None else url + action + '/'
-
