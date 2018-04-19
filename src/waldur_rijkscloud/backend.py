@@ -357,7 +357,7 @@ class RijkscloudBackend(ServiceBackend):
                 network, _ = models.Network.objects.update_or_create(
                     settings=self.settings,
                     backend_id=backend_network['name'],
-                    name=backend_network['name']
+                    defaults=dict(name=backend_network['name']),
                 )
                 self.pull_subnets(network, backend_network['subnets'])
 
@@ -384,8 +384,9 @@ class RijkscloudBackend(ServiceBackend):
             models.InternalIP.objects.update_or_create(
                 settings=self.settings,
                 subnet=subnet,
-                backend_id=internal_ip['name'],
+                backend_id=internal_ip['ip'],
                 defaults={
+                    'name': internal_ip['ip'],
                     'address': internal_ip['ip'],
                     'is_available': internal_ip['available'],
                 }

@@ -6,7 +6,6 @@ from django.utils.encoding import python_2_unicode_compatible
 
 from waldur_core.core.fields import JSONField
 from waldur_core.logging.loggers import LoggableMixin
-from waldur_core.core import models as core_models
 from waldur_core.structure import models as structure_models
 
 
@@ -142,7 +141,7 @@ class SubNet(structure_models.ServiceProperty):
         return 'rijkscloud-subnet'
 
 
-class InternalIP(core_models.BackendModelMixin, models.Model):
+class InternalIP(structure_models.ServiceProperty):
     address = models.GenericIPAddressField(protocol='IPv4')
     is_available = models.BooleanField(default=True)
     subnet = models.ForeignKey(SubNet, related_name='internal_ips')
@@ -154,3 +153,8 @@ class InternalIP(core_models.BackendModelMixin, models.Model):
     @classmethod
     def get_url_name(cls):
         return 'rijkscloud-internal-ip'
+
+    class Meta:
+        verbose_name = _('Internal IP')
+        verbose_name_plural = _('Internal IPs')
+        unique_together = ('settings', 'backend_id')

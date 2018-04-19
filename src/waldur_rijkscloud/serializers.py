@@ -264,7 +264,7 @@ class InternalIPSerializer(structure_serializers.BasePropertySerializer):
         fields = ('url', 'uuid', 'subnet', 'address', 'is_available',)
         extra_kwargs = {
             'url': {'lookup_field': 'uuid'},
-            'subnet': {'lookup_field': 'uuid'},
+            'subnet': {'lookup_field': 'uuid', 'view_name': 'rijkscloud-subnet-detail'},
         }
 
 

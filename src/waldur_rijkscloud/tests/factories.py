@@ -115,3 +115,62 @@ class FloatingIPFactory(factory.DjangoModelFactory):
     @classmethod
     def get_list_url(cls):
         return 'http://testserver' + reverse('rijkscloud-fip-list')
+
+
+class NetworkFactory(factory.DjangoModelFactory):
+    class Meta(object):
+        model = models.Network
+
+    name = factory.Sequence(lambda n: 'network_%s' % n)
+    settings = factory.SubFactory(ServiceProjectLinkFactory)
+
+    @classmethod
+    def get_url(cls, instance=None):
+        if instance is None:
+            instance = NetworkFactory()
+        return 'http://testserver' + reverse('rijkscloud-network-detail', kwargs={'uuid': instance.uuid})
+
+    @classmethod
+    def get_list_url(cls):
+        return 'http://testserver' + reverse('rijkscloud-network-list')
+
+
+class SubNetFactory(factory.DjangoModelFactory):
+    class Meta(object):
+        model = models.SubNet
+
+    name = factory.Sequence(lambda n: 'subnet%s' % n)
+    backend_id = factory.Sequence(lambda n: 'backend_id_%s' % n)
+    settings = factory.SubFactory(ServiceProjectLinkFactory)
+    network = factory.SubFactory(NetworkFactory)
+    gateway_ip = factory.LazyAttribute(lambda o: '.'.join('%s' % randint(0, 255) for _ in range(4)))
+
+    @classmethod
+    def get_url(cls, subnet=None):
+        if subnet is None:
+            subnet = SubNetFactory()
+        return 'http://testserver' + reverse('rijkscloud-subnet-detail', kwargs={'uuid': subnet.uuid})
+
+    @classmethod
+    def get_list_url(cls):
+        return 'http://testserver' + reverse('rijkscloud-subnet-list')
+
+
+class InternalIPFactory(factory.DjangoModelFactory):
+    class Meta(object):
+        model = models.InternalIP
+
+    name = factory.Sequence(lambda n: 'internal_ip%s' % n)
+    settings = factory.SubFactory(ServiceProjectLinkFactory)
+    subnet = factory.SubFactory(NetworkFactory)
+    address = factory.LazyAttribute(lambda o: '.'.join('%s' % randint(0, 255) for _ in range(4)))
+
+    @classmethod
+    def get_url(cls, instance=None):
+        if instance is None:
+            instance = InternalIPFactory()
+        return 'http://testserver' + reverse('rijkscloud-internal-ip-detail', kwargs={'uuid': instance.uuid})
+
+    @classmethod
+    def get_list_url(cls):
+        return 'http://testserver' + reverse('rijkscloud-internal-ip-list')
