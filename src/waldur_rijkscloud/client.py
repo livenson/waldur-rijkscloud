@@ -74,7 +74,7 @@ class RijkscloudClient(object):
 
     def get_subnet(self, network_name, subnet_name):
         url = 'networks/%s/subnets/%s' % (network_name, subnet_name)
-        subnet = self._get(url, None)
+        subnet = self._get(url, 'subnet')
         ips = self.list_subnet_ips(network_name, subnet_name)
         return dict(name=subnet_name, ips=ips, **subnet)
 

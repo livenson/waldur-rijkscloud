@@ -1,3 +1,7 @@
+from __future__ import unicode_literals
+
+import logging
+
 from django.db import transaction
 from django.utils import timezone
 import requests
@@ -9,6 +13,9 @@ from waldur_core.structure.utils import (
 
 from . import models
 from .client import RijkscloudClient
+
+
+logger = logging.getLogger(__name__)
 
 
 class RijkscloudBackendError(ServiceBackendError):
@@ -40,6 +47,7 @@ class RijkscloudBackend(ServiceBackend):
     def sync(self):
         self.pull_flavors()
         self.pull_floating_ips()
+        self.pull_networks()
         self.pull_volumes()
         self.pull_instances()
 
@@ -266,6 +274,8 @@ class RijkscloudBackend(ServiceBackend):
 
     @log_backend_action()
     def create_instance(self, instance):
+        # It's impossible to specify custom security group
+        # because Rijkscloud API does not provide security groups API yet.
         kwargs = {
             'name': instance.name,
             'flavor': instance.flavor_name,
@@ -273,6 +283,17 @@ class RijkscloudBackend(ServiceBackend):
         }
         if instance.floating_ip:
             kwargs['float'] = instance.floating_ip.address
+
+        kwargs['interfaces'] = [
+            {
+                'subnets': {
+                    'ip': instance.internal_ip.address,
+                    'name': instance.internal_ip.subnet.name,
+                },
+                'network': instance.internal_ip.subnet.network.name,
+                'security_groups': ['any-any']
+            }
+        ]
 
         try:
             self.client.create_instance(kwargs)
@@ -321,3 +342,51 @@ class RijkscloudBackend(ServiceBackend):
                     })
 
             models.FloatingIP.objects.filter(backend_id__in=cur_floating_ips.keys()).delete()
+
+    def pull_networks(self):
+        try:
+            backend_networks = self.client.list_networks()
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+            return
+
+        with transaction.atomic():
+            current_networks = self._get_current_properties(models.Network)
+            for backend_network in backend_networks:
+                current_networks.pop(backend_network['name'], None)
+                network, _ = models.Network.objects.update_or_create(
+                    settings=self.settings,
+                    backend_id=backend_network['name'],
+                    name=backend_network['name']
+                )
+                self.pull_subnets(network, backend_network['subnets'])
+
+            models.Network.objects.filter(backend_id__in=current_networks.keys()).delete()
+
+    def pull_subnets(self, network, backend_subnets):
+        for backend_subnet in backend_subnets:
+            subnet, _ = models.SubNet.objects.update_or_create(
+                settings=self.settings,
+                network=network,
+                backend_id=backend_subnet['name'],
+                defaults=dict(
+                    name=backend_subnet['name'],
+                    cidr=backend_subnet['cidr'],
+                    gateway_ip=backend_subnet['gateway_ip'][0],
+                    allocation_pools=backend_subnet['allocation_pools'],
+                    dns_nameservers=backend_subnet['dns_nameservers'],
+                )
+            )
+            self.pull_internal_ips(subnet, backend_subnet['ips'])
+
+    def pull_internal_ips(self, subnet, internal_ips):
+        for internal_ip in internal_ips:
+            models.InternalIP.objects.update_or_create(
+                settings=self.settings,
+                subnet=subnet,
+                backend_id=internal_ip['name'],
+                defaults={
+                    'address': internal_ip['ip'],
+                    'is_available': internal_ip['available'],
+                }
+            )

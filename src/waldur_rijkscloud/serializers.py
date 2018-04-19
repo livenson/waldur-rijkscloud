@@ -4,6 +4,7 @@ from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
+from waldur_core.core import fields as core_fields
 from waldur_core.core import serializers as core_serializers
 from waldur_core.structure import serializers as structure_serializers
 
@@ -143,15 +144,21 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
     floating_ip = serializers.HyperlinkedRelatedField(
         view_name='rijkscloud-fip-detail',
         lookup_field='uuid',
-        queryset=models.FloatingIP.objects.filter(is_available=True),
+        queryset=models.FloatingIP.objects.all().select_related('settings'),
+        write_only=True)
+
+    internal_ip = serializers.HyperlinkedRelatedField(
+        view_name='rijkscloud-internal-ip-detail',
+        lookup_field='uuid',
+        queryset=models.InternalIP.objects.filter(is_available=True).select_related('settings'),
         write_only=True)
 
     class Meta(structure_serializers.VirtualMachineSerializer.Meta):
         model = models.Instance
         fields = structure_serializers.VirtualMachineSerializer.Meta.fields + (
-            'flavor', 'floating_ip')
+            'flavor', 'floating_ip', 'internal_ip')
         protected_fields = structure_serializers.VirtualMachineSerializer.Meta.protected_fields + (
-            'flavor',)
+            'flavor', 'internal_ip',)
         read_only_fields = structure_serializers.VirtualMachineSerializer.Meta.read_only_fields + (
             'flavor_name',)
 
@@ -169,6 +176,15 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
                 _('Flavor must belong to the same service settings as service project link.'))
 
         return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        flavor = validated_data['flavor']
+        validated_data['flavor_name'] = flavor.name
+        validated_data['cores'] = flavor.cores
+        validated_data['ram'] = flavor.ram
+
+        return super(InstanceSerializer, self).create(validated_data)
 
 
 class InstanceImportableSerializer(core_serializers.AugmentedSerializerMixin,
@@ -215,6 +231,41 @@ class InstanceImportSerializer(InstanceImportableSerializer):
             })
 
         return instance
+
+
+class NetworkSerializer(structure_serializers.BasePropertySerializer):
+    class Meta(structure_serializers.BasePropertySerializer.Meta):
+        model = models.Network
+        fields = ('url', 'uuid', 'name', 'subnets')
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+            'settings': {'lookup_field': 'uuid'},
+            'subnets': {'lookup_field': 'uuid', 'view_name': 'rijkscloud-subnet-detail'}
+        }
+
+
+class SubNetSerializer(structure_serializers.BasePropertySerializer):
+    dns_nameservers = core_fields.JsonField(read_only=True)
+    allocation_pools = core_fields.JsonField(read_only=True)
+
+    class Meta(structure_serializers.BasePropertySerializer.Meta):
+        model = models.SubNet
+        fields = ('url', 'uuid', 'name', 'cidr', 'gateway_ip', 'allocation_pools', 'dns_nameservers', 'network')
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+            'settings': {'lookup_field': 'uuid'},
+            'network': {'lookup_field': 'uuid', 'view_name': 'rijkscloud-network-detail'},
+        }
+
+
+class InternalIPSerializer(structure_serializers.BasePropertySerializer):
+    class Meta(structure_serializers.BasePropertySerializer.Meta):
+        model = models.InternalIP
+        fields = ('url', 'uuid', 'subnet', 'address', 'is_available',)
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+            'subnet': {'lookup_field': 'uuid'},
+        }
 
 
 class FloatingIPSerializer(structure_serializers.BasePropertySerializer):

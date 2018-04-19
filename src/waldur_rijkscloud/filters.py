@@ -34,6 +34,28 @@ class InstanceFilter(structure_filters.BaseResourceFilter):
         fields = structure_filters.BaseResourceFilter.Meta.fields + ('runtime_state',)
 
 
+class NetworkFilter(structure_filters.ServicePropertySettingsFilter):
+
+    class Meta(structure_filters.ServicePropertySettingsFilter.Meta):
+        model = models.Network
+
+
+class SubNetFilter(structure_filters.ServicePropertySettingsFilter):
+    network = core_filters.URLFilter(view_name='rijkscloud-network-detail', name='network__uuid')
+    network_uuid = django_filters.UUIDFilter(name='network__uuid')
+
+    class Meta(structure_filters.ServicePropertySettingsFilter.Meta):
+        model = models.SubNet
+
+
+class InternalIPFilter(structure_filters.ServicePropertySettingsFilter):
+
+    class Meta(structure_filters.ServicePropertySettingsFilter.Meta):
+        model = models.InternalIP
+        fields = structure_filters.ServicePropertySettingsFilter.Meta.fields + (
+            'address', 'subnet', 'is_available')
+
+
 class FloatingIPFilter(structure_filters.ServicePropertySettingsFilter):
 
     class Meta(structure_filters.ServicePropertySettingsFilter.Meta):

@@ -2,9 +2,11 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.utils.encoding import python_2_unicode_compatible
 
 from waldur_core.core.fields import JSONField
 from waldur_core.logging.loggers import LoggableMixin
+from waldur_core.core import models as core_models
 from waldur_core.structure import models as structure_models
 
 
@@ -78,6 +80,7 @@ class Instance(structure_models.VirtualMachine):
     )
     flavor_name = models.CharField(max_length=255, blank=True)
     floating_ip = models.ForeignKey('FloatingIP', blank=True, null=True)
+    internal_ip = models.ForeignKey('InternalIP')
 
     @classmethod
     def get_url_name(cls):
@@ -97,6 +100,7 @@ class FloatingIP(structure_models.ServiceProperty):
     class Meta:
         verbose_name = _('Floating IP')
         verbose_name_plural = _('Floating IPs')
+        unique_together = ('settings', 'backend_id')
 
     @classmethod
     def get_url_name(cls):
@@ -105,3 +109,48 @@ class FloatingIP(structure_models.ServiceProperty):
     @classmethod
     def get_backend_fields(cls):
         return super(FloatingIP, cls).get_backend_fields() + ('address', 'is_available')
+
+
+@python_2_unicode_compatible
+class Network(structure_models.ServiceProperty):
+    @classmethod
+    def get_url_name(cls):
+        return 'rijkscloud-network'
+
+    def __str__(self):
+        return self.name
+
+
+@python_2_unicode_compatible
+class SubNet(structure_models.ServiceProperty):
+    network = models.ForeignKey(Network, related_name='subnets')
+    cidr = models.CharField(max_length=32)
+    gateway_ip = models.GenericIPAddressField(protocol='IPv4')
+    allocation_pools = JSONField()
+    dns_nameservers = JSONField(help_text=_('List of DNS name servers associated with the subnet.'))
+
+    class Meta(object):
+        verbose_name = _('Subnet')
+        verbose_name_plural = _('Subnets')
+        unique_together = ('settings', 'backend_id')
+
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.cidr)
+
+    @classmethod
+    def get_url_name(cls):
+        return 'rijkscloud-subnet'
+
+
+class InternalIP(core_models.BackendModelMixin, models.Model):
+    address = models.GenericIPAddressField(protocol='IPv4')
+    is_available = models.BooleanField(default=True)
+    subnet = models.ForeignKey(SubNet, related_name='internal_ips')
+
+    @classmethod
+    def get_backend_fields(cls):
+        return super(InternalIP, cls).get_backend_fields() + ('address', 'is_available')
+
+    @classmethod
+    def get_url_name(cls):
+        return 'rijkscloud-internal-ip'
