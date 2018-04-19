@@ -77,6 +77,7 @@ class Instance(structure_models.VirtualMachine):
         on_delete=models.PROTECT
     )
     flavor_name = models.CharField(max_length=255, blank=True)
+    floating_ip = models.ForeignKey('FloatingIP', blank=True, null=True)
 
     @classmethod
     def get_url_name(cls):
@@ -87,3 +88,20 @@ class Instance(structure_models.VirtualMachine):
         return super(Instance, cls).get_backend_fields() + (
             'flavor_name', 'ram', 'cores', 'runtime_state'
         )
+
+
+class FloatingIP(structure_models.ServiceProperty):
+    address = models.GenericIPAddressField(protocol='IPv4', null=True)
+    is_available = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = _('Floating IP')
+        verbose_name_plural = _('Floating IPs')
+
+    @classmethod
+    def get_url_name(cls):
+        return 'rijkscloud-fip'
+
+    @classmethod
+    def get_backend_fields(cls):
+        return super(FloatingIP, cls).get_backend_fields() + ('address', 'is_available')

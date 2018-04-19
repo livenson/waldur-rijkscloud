@@ -39,6 +39,7 @@ class RijkscloudBackend(ServiceBackend):
 
     def sync(self):
         self.pull_flavors()
+        self.pull_floating_ips()
         self.pull_volumes()
         self.pull_instances()
 
@@ -270,6 +271,8 @@ class RijkscloudBackend(ServiceBackend):
             'flavor': instance.flavor_name,
             'userdata': instance.user_data,
         }
+        if instance.floating_ip:
+            kwargs['float'] = instance.floating_ip.address
 
         try:
             self.client.create_instance(kwargs)
@@ -297,3 +300,24 @@ class RijkscloudBackend(ServiceBackend):
                 return True
             else:
                 six.reraise(RijkscloudBackendError, e)
+
+    def pull_floating_ips(self):
+        try:
+            backend_floating_ips = self.client.list_floatingips()
+        except requests.RequestException as e:
+            six.reraise(RijkscloudBackendError, e)
+            return
+
+        with transaction.atomic():
+            cur_floating_ips = self._get_current_properties(models.FloatingIP)
+            for backend_fip in backend_floating_ips:
+                cur_floating_ips.pop(backend_fip['float_ip'], None)
+                models.FloatingIP.objects.update_or_create(
+                    settings=self.settings,
+                    backend_id=backend_fip['float_ip'],
+                    defaults={
+                        'address': backend_fip['float_ip'],
+                        'is_available': backend_fip['available'],
+                    })
+
+            models.FloatingIP.objects.filter(backend_id__in=cur_floating_ips.keys()).delete()

@@ -1,3 +1,4 @@
+from random import randint
 import uuid
 
 from django.urls import reverse
@@ -95,3 +96,22 @@ class VolumeFactory(factory.DjangoModelFactory):
     def get_list_url(cls, action=None):
         url = 'http://testserver' + reverse('rijkscloud-volume-list')
         return url if action is None else url + action + '/'
+
+
+class FloatingIPFactory(factory.DjangoModelFactory):
+    class Meta(object):
+        model = models.FloatingIP
+
+    name = factory.Sequence(lambda n: 'floating_ip%s' % n)
+    settings = factory.SubFactory(ServiceProjectLinkFactory)
+    address = factory.LazyAttribute(lambda o: '.'.join('%s' % randint(0, 255) for _ in range(4)))
+
+    @classmethod
+    def get_url(cls, instance=None):
+        if instance is None:
+            instance = FloatingIPFactory()
+        return 'http://testserver' + reverse('rijkscloud-fip-detail', kwargs={'uuid': instance.uuid})
+
+    @classmethod
+    def get_list_url(cls):
+        return 'http://testserver' + reverse('rijkscloud-fip-list')

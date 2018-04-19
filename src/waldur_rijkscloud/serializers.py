@@ -140,10 +140,16 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
         queryset=models.Flavor.objects.all().select_related('settings'),
         write_only=True)
 
+    floating_ip = serializers.HyperlinkedRelatedField(
+        view_name='rijkscloud-fip-detail',
+        lookup_field='uuid',
+        queryset=models.FloatingIP.objects.filter(is_available=True),
+        write_only=True)
+
     class Meta(structure_serializers.VirtualMachineSerializer.Meta):
         model = models.Instance
         fields = structure_serializers.VirtualMachineSerializer.Meta.fields + (
-            'flavor',)
+            'flavor', 'floating_ip')
         protected_fields = structure_serializers.VirtualMachineSerializer.Meta.protected_fields + (
             'flavor',)
         read_only_fields = structure_serializers.VirtualMachineSerializer.Meta.read_only_fields + (
@@ -209,3 +215,13 @@ class InstanceImportSerializer(InstanceImportableSerializer):
             })
 
         return instance
+
+
+class FloatingIPSerializer(structure_serializers.BasePropertySerializer):
+    class Meta(structure_serializers.BasePropertySerializer.Meta):
+        model = models.FloatingIP
+        fields = ('url', 'uuid', 'settings', 'address', 'is_available',)
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+            'settings': {'lookup_field': 'uuid'},
+        }

@@ -32,3 +32,11 @@ class InstanceFilter(structure_filters.BaseResourceFilter):
     class Meta(structure_filters.BaseResourceFilter.Meta):
         model = models.Instance
         fields = structure_filters.BaseResourceFilter.Meta.fields + ('runtime_state',)
+
+
+class FloatingIPFilter(structure_filters.ServicePropertySettingsFilter):
+
+    class Meta(structure_filters.ServicePropertySettingsFilter.Meta):
+        model = models.FloatingIP
+        fields = structure_filters.ServicePropertySettingsFilter.Meta.fields + (
+            'address', 'is_available')
