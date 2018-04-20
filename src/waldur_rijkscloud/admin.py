@@ -15,6 +15,16 @@ class FlavorAdmin(structure_admin.BackendModelAdmin):
     list_display = ('name', 'settings', 'cores', 'ram')
 
 
+class FloatingIPAdmin(structure_admin.BackendModelAdmin):
+    list_filter = ('settings',)
+    list_display = ('address', 'settings', 'is_available')
+
+
+class InternalIPAdmin(structure_admin.BackendModelAdmin):
+    list_filter = ('settings',)
+    list_display = ('address', 'settings', 'is_available')
+
+
 class VolumeAdmin(structure_admin.ResourceAdmin):
 
     class Pull(ExecutorAdminAction):
@@ -45,5 +55,7 @@ class InstanceAdmin(structure_admin.VirtualMachineAdmin):
 admin.site.register(models.RijkscloudService, structure_admin.ServiceAdmin)
 admin.site.register(models.RijkscloudServiceProjectLink, structure_admin.ServiceProjectLinkAdmin)
 admin.site.register(models.Flavor, FlavorAdmin)
+admin.site.register(models.FloatingIP, FloatingIPAdmin)
+admin.site.register(models.InternalIP, InternalIPAdmin)
 admin.site.register(models.Volume, VolumeAdmin)
 admin.site.register(models.Instance, InstanceAdmin)

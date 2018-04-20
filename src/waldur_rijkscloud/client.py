@@ -29,6 +29,10 @@ class RijkscloudClient(object):
     def _post(self, endpoint, body):
         url = '%s/%s' % (self.base_url, endpoint)
         response = requests.post(url, headers=self.headers, data=json.dumps(body))
+        if response.status_code == 400 and response.content:
+            message = response.json()['error']['message']
+            raise requests.HTTPError(message, response=response)
+
         response.raise_for_status()
         if response.content:
             return response.json()
@@ -74,11 +78,11 @@ class RijkscloudClient(object):
 
     def get_subnet(self, network_name, subnet_name):
         url = 'networks/%s/subnets/%s' % (network_name, subnet_name)
-        subnet = self._get(url, None)
-        floatingips = self.list_subnet_floatingips(network_name, subnet_name)
-        return dict(name=subnet_name, floatingips=floatingips, **subnet)
+        subnet = self._get(url, 'subnet')
+        ips = self.list_subnet_ips(network_name, subnet_name)
+        return dict(name=subnet_name, ips=ips, **subnet)
 
-    def list_subnet_floatingips(self, network_name, subnet_name):
+    def list_subnet_ips(self, network_name, subnet_name):
         url = 'networks/%s/subnets/%s/ips' % (network_name, subnet_name)
         return self._get(url, 'ips')
 
