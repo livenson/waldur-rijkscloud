@@ -144,8 +144,10 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
     floating_ip = serializers.HyperlinkedRelatedField(
         view_name='rijkscloud-fip-detail',
         lookup_field='uuid',
-        queryset=models.FloatingIP.objects.all().select_related('settings'),
-        write_only=True)
+        queryset=models.FloatingIP.objects.filter(is_available=True).select_related('settings'),
+        write_only=True,
+        allow_null=True,
+    )
 
     internal_ip = serializers.HyperlinkedRelatedField(
         view_name='rijkscloud-internal-ip-detail',

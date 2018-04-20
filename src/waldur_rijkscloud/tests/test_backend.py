@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import test
 from six.moves import mock
@@ -198,3 +200,35 @@ class NetworkPullTest(BaseBackendTest):
         self.backend.pull_networks()
         internal_ip.refresh_from_db()
         self.assertFalse(internal_ip.is_available)
+
+
+class InstanceCreateTest(BaseBackendTest):
+    def test_request_is_valid(self):
+        vm = factories.InstanceFactory(
+            service_project_link=self.fixture.spl,
+            name='vm01',
+            flavor_name='mini',
+            floating_ip__address='123.21.42.121',
+            internal_ip__address='10.10.11.1',
+            internal_ip__subnet__name='int',
+            internal_ip__subnet__network__name='service',
+        )
+        self.backend.create_instance(vm)
+        self.backend.client.create_instance.assert_called_once_with({
+            'name': 'vm01',
+            'flavor': 'mini',
+            'float': '123.21.42.121',
+            'userdata': 'normal',
+            'interfaces': [
+                {
+                    'subnets': [
+                        {
+                            'ip': '10.10.11.1',
+                            'name': 'int',
+                        }
+                    ],
+                    'network': 'service',
+                    'security_groups': ['any-any']
+                }
+            ]
+        })

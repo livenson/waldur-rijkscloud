@@ -279,17 +279,20 @@ class RijkscloudBackend(ServiceBackend):
         kwargs = {
             'name': instance.name,
             'flavor': instance.flavor_name,
-            'userdata': instance.user_data,
+            'userdata': instance.user_data or 'normal',
         }
+
         if instance.floating_ip:
             kwargs['float'] = instance.floating_ip.address
 
         kwargs['interfaces'] = [
             {
-                'subnets': {
-                    'ip': instance.internal_ip.address,
-                    'name': instance.internal_ip.subnet.name,
-                },
+                'subnets': [
+                    {
+                        'ip': instance.internal_ip.address,
+                        'name': instance.internal_ip.subnet.name,
+                    }
+                ],
                 'network': instance.internal_ip.subnet.network.name,
                 'security_groups': ['any-any']
             }

@@ -29,6 +29,10 @@ class RijkscloudClient(object):
     def _post(self, endpoint, body):
         url = '%s/%s' % (self.base_url, endpoint)
         response = requests.post(url, headers=self.headers, data=json.dumps(body))
+        if response.status_code == 400 and response.content:
+            message = response.json()['error']['message']
+            raise requests.HTTPError(message, response=response)
+
         response.raise_for_status()
         if response.content:
             return response.json()

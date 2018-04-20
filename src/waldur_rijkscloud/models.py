@@ -71,6 +71,7 @@ class Volume(structure_models.Volume):
             'name', 'size', 'metadata', 'runtime_state')
 
 
+@python_2_unicode_compatible
 class Instance(structure_models.VirtualMachine):
     service_project_link = models.ForeignKey(
         RijkscloudServiceProjectLink,
@@ -91,7 +92,20 @@ class Instance(structure_models.VirtualMachine):
             'flavor_name', 'ram', 'cores', 'runtime_state'
         )
 
+    @property
+    def external_ips(self):
+        if self.floating_ip:
+            return [self.floating_ip.address]
 
+    @property
+    def internal_ips(self):
+        return [self.internal_ip.address]
+
+    def __str__(self):
+        return self.name
+
+
+@python_2_unicode_compatible
 class FloatingIP(structure_models.ServiceProperty):
     address = models.GenericIPAddressField(protocol='IPv4', null=True)
     is_available = models.BooleanField(default=True)
@@ -108,6 +122,9 @@ class FloatingIP(structure_models.ServiceProperty):
     @classmethod
     def get_backend_fields(cls):
         return super(FloatingIP, cls).get_backend_fields() + ('address', 'is_available')
+
+    def __str__(self):
+        return self.address
 
 
 @python_2_unicode_compatible
@@ -141,6 +158,7 @@ class SubNet(structure_models.ServiceProperty):
         return 'rijkscloud-subnet'
 
 
+@python_2_unicode_compatible
 class InternalIP(structure_models.ServiceProperty):
     address = models.GenericIPAddressField(protocol='IPv4')
     is_available = models.BooleanField(default=True)
@@ -158,3 +176,6 @@ class InternalIP(structure_models.ServiceProperty):
         verbose_name = _('Internal IP')
         verbose_name_plural = _('Internal IPs')
         unique_together = ('settings', 'backend_id')
+
+    def __str__(self):
+        return '%s (%s)' % (self.address, self.subnet.name)
