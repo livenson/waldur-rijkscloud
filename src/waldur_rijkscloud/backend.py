@@ -224,6 +224,15 @@ class RijkscloudBackend(ServiceBackend):
             instance.cores = backend_flavor['vcpus']
             instance.ram = backend_flavor['ram']
 
+        # It is assumed that addresses list contains either one or two items, where
+        # first item is internal IP address and second item is floating IP address.
+        # This code does not handle case when internal subnet CIDR overlaps with other internal subnet.
+        addresses = backend_instance['addresses']
+        instance.internal_ip = models.InternalIP.objects.filter(
+            settings=self.settings, address=addresses[0]).first()
+        if len(addresses) == 2:
+            instance.floating_ip = models.FloatingIP.objects.filter(
+                settings=self.settings, address=addresses[1]).first()
         return instance
 
     @log_backend_action()
