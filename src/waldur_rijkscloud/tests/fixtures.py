@@ -28,7 +28,7 @@ class RijkscloudFixture(ProjectFixture):
 
     @cached_property
     def floating_ip(self):
-        return factories.InternalIPFactory(settings=self.service_settings)
+        return factories.FloatingIPFactory(settings=self.service_settings)
 
     @cached_property
     def spl(self):

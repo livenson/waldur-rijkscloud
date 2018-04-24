@@ -232,3 +232,25 @@ class InstanceCreateTest(BaseBackendTest):
                 }
             ]
         })
+
+
+class InstanceImportTest(BaseBackendTest):
+    def test_internal_and_floating_ips_are_mapped(self):
+        internal_ip = self.fixture.internal_ip
+        floating_ip = self.fixture.floating_ip
+
+        self.backend.client.get_instance.return_value = {
+            'addresses': [internal_ip.address, floating_ip.address],
+            'flavor': 'std.2gb',
+            'name': 'test-vm'
+        }
+
+        self.backend.client.get_flavor.return_value = {
+            'name': 'std.2gb',
+            'ram': 2048,
+            'vcpus': 1
+        }
+
+        instance = self.backend.import_instance('test-vm', service_project_link=self.fixture.spl)
+        self.assertEqual(instance.internal_ip, internal_ip)
+        self.assertEqual(instance.floating_ip, floating_ip)
