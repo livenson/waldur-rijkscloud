@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import django_filters
+from django_filters.widgets import BooleanWidget
 
 from waldur_core.core import filters as core_filters
 from waldur_core.structure import filters as structure_filters
@@ -49,16 +50,18 @@ class SubNetFilter(structure_filters.ServicePropertySettingsFilter):
 
 
 class InternalIPFilter(structure_filters.ServicePropertySettingsFilter):
+    is_available = django_filters.BooleanFilter(widget=BooleanWidget)
 
     class Meta(structure_filters.ServicePropertySettingsFilter.Meta):
         model = models.InternalIP
         fields = structure_filters.ServicePropertySettingsFilter.Meta.fields + (
-            'address', 'subnet', 'is_available')
+            'address', 'subnet')
 
 
 class FloatingIPFilter(structure_filters.ServicePropertySettingsFilter):
+    is_available = django_filters.BooleanFilter(widget=BooleanWidget)
 
     class Meta(structure_filters.ServicePropertySettingsFilter.Meta):
         model = models.FloatingIP
         fields = structure_filters.ServicePropertySettingsFilter.Meta.fields + (
-            'address', 'is_available')
+            'address',)
