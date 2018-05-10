@@ -9,7 +9,7 @@ install_requires = [
 
 setup(
     name='waldur-rijkscloud',
-    version='0.1.0.dev0',
+    version='0.2.0',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
     url='https://waldur.com',
