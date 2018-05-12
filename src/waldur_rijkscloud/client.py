@@ -8,11 +8,12 @@ class RijkscloudClient(object):
     Rijkscloud Python client.
     """
 
-    def __init__(self, apikey):
+    def __init__(self, apikey, userid):
         self.base_url = 'https://cst.rijkscloud.nl/api'
         self.headers = {
             'Content-Type': 'application/json',
-            'Authorization': apikey,
+            'apikey': apikey,
+            'userid': userid,
         }
 
     def _get(self, endpoint, key):
@@ -21,24 +22,34 @@ class RijkscloudClient(object):
         response.raise_for_status()
         data = response.json()
         if key:
-            return data[key]
+            return data.get(key)
         else:
             return data
 
     def _post(self, endpoint, body):
         url = '%s/%s' % (self.base_url, endpoint)
         response = requests.post(url, headers=self.headers, data=json.dumps(body))
+        if response.status_code == 400 and response.content:
+            message = response.json()['error']['message']
+            raise requests.HTTPError(message, response=response)
+
         response.raise_for_status()
-        return response.json()
+        if response.content:
+            return response.json()
 
     def _delete(self, endpoint):
         url = '%s/%s' % (self.base_url, endpoint)
-        response = requests.post(url, headers=self.headers)
+        response = requests.delete(url, headers=self.headers)
         response.raise_for_status()
-        return response.json()
+        if response.content:
+            return response.json()
 
     def list_flavors(self):
         return self._get('flavors', 'flavors')
+
+    def get_flavor(self, flavor_name):
+        flavors_map = {flavor['name']: flavor for flavor in self.list_flavors()}
+        return flavors_map.get(flavor_name)
 
     def get_instance(self, instance_name):
         url = 'instances/%s' % instance_name
@@ -67,11 +78,11 @@ class RijkscloudClient(object):
 
     def get_subnet(self, network_name, subnet_name):
         url = 'networks/%s/subnets/%s' % (network_name, subnet_name)
-        subnet = self._get(url, None)
-        floatingips = self.list_subnet_floatingips(network_name, subnet_name)
-        return dict(name=subnet_name, floatingips=floatingips, **subnet)
+        subnet = self._get(url, 'subnet')
+        ips = self.list_subnet_ips(network_name, subnet_name)
+        return dict(name=subnet_name, ips=ips, **subnet)
 
-    def list_subnet_floatingips(self, network_name, subnet_name):
+    def list_subnet_ips(self, network_name, subnet_name):
         url = 'networks/%s/subnets/%s/ips' % (network_name, subnet_name)
         return self._get(url, 'ips')
 
@@ -89,7 +100,7 @@ class RijkscloudClient(object):
         return [self.get_volume(volume['name']) for volume in volumes]
 
     def create_volume(self, body):
-        return self._post('volume', body)
+        return self._post('volumes', body)
 
     def delete_volume(self, volume_name):
-        return self._delete('volume/%s' % volume_name)
+        return self._delete('volumes/%s' % volume_name)

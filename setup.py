@@ -2,14 +2,14 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'waldur-core>=0.157.2',
+    'waldur-core>=0.157.5',
     'requests',
 ]
 
 
 setup(
     name='waldur-rijkscloud',
-    version='0.1.0.dev0',
+    version='0.2.0',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
     url='https://waldur.com',
