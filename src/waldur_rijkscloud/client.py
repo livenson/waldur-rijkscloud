@@ -9,7 +9,7 @@ class RijkscloudClient(object):
     """
 
     def __init__(self, apikey, userid):
-        self.base_url = 'https://cst.rijkscloud.nl/api'
+        self.base_url = 'https://api.ix.rijkscloud.nl'
         self.headers = {
             'Content-Type': 'application/json',
             'apikey': apikey,
