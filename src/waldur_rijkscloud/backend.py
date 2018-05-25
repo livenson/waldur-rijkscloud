@@ -377,6 +377,9 @@ class RijkscloudBackend(ServiceBackend):
 
     def pull_subnets(self, network, backend_subnets):
         for backend_subnet in backend_subnets:
+            gateway_ip = backend_subnet['gateway_ip']
+            if isinstance(gateway_ip, list):
+                gateway_ip = gateway_ip[0]
             subnet, _ = models.SubNet.objects.update_or_create(
                 settings=self.settings,
                 network=network,
@@ -384,7 +387,7 @@ class RijkscloudBackend(ServiceBackend):
                 defaults=dict(
                     name=backend_subnet['name'],
                     cidr=backend_subnet['cidr'],
-                    gateway_ip=backend_subnet['gateway_ip'][0],
+                    gateway_ip=gateway_ip,
                     allocation_pools=backend_subnet['allocation_pools'],
                     dns_nameservers=backend_subnet['dns_nameservers'],
                 )

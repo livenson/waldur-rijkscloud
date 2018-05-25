@@ -159,6 +159,12 @@ class NetworkPullTest(BaseBackendTest):
         self.backend.pull_networks()
         self.assertEqual(models.Network.objects.count(), 1)
 
+    def test_gateway_ip_may_be_list_or_string(self):
+        self.backend.client.list_networks.return_value[0]['subnets'][0]['gateway_ip'] = '10.10.11.1'
+        self.backend.pull_networks()
+        self.assertEqual(models.SubNet.objects.count(), 1)
+        self.assertEqual(models.SubNet.objects.last().gateway_ip, '10.10.11.1')
+
     def test_old_network_is_removed(self):
         old_net = factories.NetworkFactory(
             settings=self.fixture.service_settings, backend_id='stale')
