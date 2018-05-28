@@ -223,7 +223,6 @@ class InstanceCreateTest(BaseBackendTest):
         self.backend.client.create_instance.assert_called_once_with({
             'name': 'vm01',
             'flavor': 'mini',
-            'float': '123.21.42.121',
             'userdata': 'normal',
             'interfaces': [
                 {
@@ -234,7 +233,8 @@ class InstanceCreateTest(BaseBackendTest):
                         }
                     ],
                     'network': 'service',
-                    'security_groups': ['any-any']
+                    'security_groups': ['any-any'],
+                    'float': '123.21.42.121',
                 }
             ]
         })
