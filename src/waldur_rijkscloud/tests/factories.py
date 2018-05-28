@@ -16,12 +16,18 @@ class UrlModelFactory(factory.DjangoModelFactory):
     def get_url(cls, service=None, action=None):
         if service is None:
             service = ServiceFactory()
-        url = 'http://testserver' + reverse('{}-detail'.format(cls.Meta.model.get_url_name()), kwargs={'uuid': service.uuid})
+
+        kwargs = {}
+        if hasattr(service, 'uuid'):
+            kwargs['uuid'] = service.uuid
+        else:
+            kwargs['pk'] = service.pk
+        url = 'http://testserver' + reverse('{}-detail'.format(cls._meta.model.get_url_name()), kwargs=kwargs)
         return url if action is None else url + action + '/'
 
     @classmethod
     def get_list_url(cls):
-        return 'http://testserver' + reverse('{}-list'.format(cls.Meta.model.get_url_name()))
+        return 'http://testserver' + reverse('{}-list'.format(cls._meta.model.get_url_name()))
 
 
 class ServiceSettingsFactory(structure_factories.ServiceSettingsFactory):
