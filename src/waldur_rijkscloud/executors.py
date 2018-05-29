@@ -4,7 +4,6 @@ from celery import chain
 
 from waldur_core.core import executors as core_executors
 from waldur_core.core import tasks as core_tasks
-from waldur_core.core import utils as core_utils
 
 
 class VolumePullExecutor(core_executors.ActionExecutor):
