@@ -172,16 +172,10 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
         service_project_link = attrs['service_project_link']
         settings = service_project_link.service.settings
         flavor = attrs['flavor']
-        floating_ip = attrs.get('floating_ip')
 
         if flavor.settings != settings:
             raise serializers.ValidationError(
                 _('Flavor must belong to the same service settings as service project link.'))
-
-        if floating_ip and not floating_ip.is_available:
-            raise serializers.ValidationError({
-                'floating_ip': _('Floating IP is not available now. Please select another one.')
-            })
 
         return attrs
 
@@ -191,6 +185,15 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
         validated_data['flavor_name'] = flavor.name
         validated_data['cores'] = flavor.cores
         validated_data['ram'] = flavor.ram
+
+        floating_ip = validated_data.get('floating_ip')
+        if floating_ip:
+            floating_ip.is_available = False
+            floating_ip.save()
+
+        internal_ip = validated_data['internal_ip']
+        internal_ip.is_available = False
+        internal_ip.save()
 
         return super(InstanceSerializer, self).create(validated_data)
 
