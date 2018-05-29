@@ -17,7 +17,7 @@ class ServiceProjectLinkViewSet(structure_views.BaseServiceProjectLinkViewSet):
 
 
 class FlavorViewSet(structure_views.BaseServicePropertyViewSet):
-    queryset = models.Flavor.objects.all()
+    queryset = models.Flavor.objects.all().order_by('cores', 'ram')
     serializer_class = serializers.FlavorSerializer
     lookup_field = 'uuid'
     filter_class = filters.FlavorFilter
