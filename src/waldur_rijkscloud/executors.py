@@ -4,6 +4,7 @@ from celery import chain
 
 from waldur_core.core import executors as core_executors
 from waldur_core.core import tasks as core_tasks
+from waldur_core.core import utils as core_utils
 
 
 class VolumePullExecutor(core_executors.ActionExecutor):
@@ -75,10 +76,32 @@ class InstanceDeleteExecutor(core_executors.DeleteExecutor):
     @classmethod
     def get_task_signature(cls, instance, serialized_instance, **kwargs):
         if instance.backend_id:
-            return chain(
-                core_tasks.BackendMethodTask().si(
-                    serialized_instance, 'delete_instance', state_transition='begin_deleting'),
-                core_tasks.PollBackendCheckTask().si(serialized_instance, 'is_instance_deleted'),
-            )
+            return cls.get_delete_instance_tasks(instance, serialized_instance)
         else:
             return core_tasks.StateTransitionTask().si(serialized_instance, state_transition='begin_deleting')
+
+    @classmethod
+    def get_delete_instance_tasks(cls, instance, serialized_instance):
+        _tasks = [
+            core_tasks.BackendMethodTask().si(
+                serialized_instance,
+                'delete_instance',
+                state_transition='begin_deleting'
+            ),
+            core_tasks.PollBackendCheckTask().si(
+                serialized_instance,
+                'is_instance_deleted'
+            ),
+            core_tasks.IndependentBackendMethodTask().si(
+                serialized_instance,
+                'pull_networks'
+            ),
+        ]
+
+        if instance.floating_ip:
+            _tasks.append(core_tasks.IndependentBackendMethodTask().si(
+                serialized_instance,
+                'pull_floating_ips'
+            ))
+
+        return chain(_tasks)
