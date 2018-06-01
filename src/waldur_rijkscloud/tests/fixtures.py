@@ -41,3 +41,7 @@ class RijkscloudFixture(ProjectFixture):
             internal_ip=self.internal_ip,
             floating_ip=self.floating_ip,
         )
+
+    @cached_property
+    def flavor(self):
+        return factories.FlavorFactory(settings=self.service_settings)

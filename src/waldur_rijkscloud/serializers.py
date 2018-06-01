@@ -186,6 +186,15 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
         validated_data['cores'] = flavor.cores
         validated_data['ram'] = flavor.ram
 
+        floating_ip = validated_data.get('floating_ip')
+        if floating_ip:
+            floating_ip.is_available = False
+            floating_ip.save()
+
+        internal_ip = validated_data['internal_ip']
+        internal_ip.is_available = False
+        internal_ip.save()
+
         return super(InstanceSerializer, self).create(validated_data)
 
 

@@ -289,23 +289,22 @@ class RijkscloudBackend(ServiceBackend):
             'name': instance.name,
             'flavor': instance.flavor_name,
             'userdata': instance.user_data or 'normal',
+            'interfaces': [
+                {
+                    'subnets': [
+                        {
+                            'ip': instance.internal_ip.address,
+                            'name': instance.internal_ip.subnet.name,
+                        }
+                    ],
+                    'network': instance.internal_ip.subnet.network.name,
+                    'security_groups': ['any-any']
+                }
+            ]
         }
 
         if instance.floating_ip:
-            kwargs['float'] = instance.floating_ip.address
-
-        kwargs['interfaces'] = [
-            {
-                'subnets': [
-                    {
-                        'ip': instance.internal_ip.address,
-                        'name': instance.internal_ip.subnet.name,
-                    }
-                ],
-                'network': instance.internal_ip.subnet.network.name,
-                'security_groups': ['any-any']
-            }
-        ]
+            kwargs['interfaces'][0]['float'] = instance.floating_ip.address
 
         try:
             self.client.create_instance(kwargs)
