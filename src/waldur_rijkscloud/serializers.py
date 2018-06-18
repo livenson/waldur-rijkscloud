@@ -57,9 +57,12 @@ class VolumeSerializer(structure_serializers.BaseResourceSerializer):
         view_name='rijkscloud-detail',
         read_only=True,
         lookup_field='uuid')
+
     service_project_link = serializers.HyperlinkedRelatedField(
         view_name='rijkscloud-spl-detail',
         queryset=models.RijkscloudServiceProjectLink.objects.all(),
+        allow_null=True,
+        required=False,
     )
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
@@ -133,7 +136,10 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
 
     service_project_link = serializers.HyperlinkedRelatedField(
         view_name='rijkscloud-spl-detail',
-        queryset=models.RijkscloudServiceProjectLink.objects.all())
+        queryset=models.RijkscloudServiceProjectLink.objects.all(),
+        allow_null=True,
+        required=False,
+    )
 
     flavor = serializers.HyperlinkedRelatedField(
         view_name='rijkscloud-flavor-detail',
@@ -165,6 +171,8 @@ class InstanceSerializer(structure_serializers.VirtualMachineSerializer):
             'flavor_name',)
 
     def validate(self, attrs):
+        attrs = super(InstanceSerializer, self).validate(attrs)
+
         # skip validation on object update
         if self.instance is not None:
             return attrs
