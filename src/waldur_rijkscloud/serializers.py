@@ -4,7 +4,6 @@ from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from waldur_core.core import fields as core_fields
 from waldur_core.core import serializers as core_serializers
 from waldur_core.structure import serializers as structure_serializers
 
@@ -264,8 +263,8 @@ class NetworkSerializer(structure_serializers.BasePropertySerializer):
 
 
 class SubNetSerializer(structure_serializers.BasePropertySerializer):
-    dns_nameservers = core_fields.JsonField(read_only=True)
-    allocation_pools = core_fields.JsonField(read_only=True)
+    dns_nameservers = serializers.JSONField(read_only=True)
+    allocation_pools = serializers.JSONField(read_only=True)
 
     class Meta(structure_serializers.BasePropertySerializer.Meta):
         model = models.SubNet
