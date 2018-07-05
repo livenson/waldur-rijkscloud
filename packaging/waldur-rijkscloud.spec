@@ -1,7 +1,7 @@
 Name: waldur-rijkscloud
 Summary: Waldur plugin for Dutch government cloud
 Group: Development/Libraries
-Version: 0.2.4
+Version: 0.2.5
 Release: 1.el7
 License: MIT
 Url: http://waldur.com
